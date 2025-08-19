@@ -4,69 +4,80 @@ import annotations.AfterSuite;
 import annotations.BeforeSuite;
 import annotations.Test;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 public class Runner {
 
+    private static Method beforeSuiteMethod;
+    private static Method afterSuiteMethod;
+    private static final List<Method> testMethods = new ArrayList<>();
+
     public static void run(Class<?> classToRun) {
-        List<Method> methods = Arrays.stream(classToRun.getDeclaredMethods()).toList();
-        List<Method> methodsWithBeforeSuite = methods.stream()
-                .filter(m -> m.isAnnotationPresent(BeforeSuite.class)).toList();
-        List<Method> methodsWithAfterSuite = methods.stream()
-                .filter(m -> m.isAnnotationPresent(AfterSuite.class)).toList();
-        List<Method> testMethods = methods.stream()
-                .filter(m -> m.isAnnotationPresent(Test.class)).toList();
-
-        checkBeforeAfterAnnotations(methodsWithBeforeSuite, methodsWithAfterSuite);
-
+        Method[] methods = classToRun.getDeclaredMethods();
         Object testClassInstance;
         try {
             testClassInstance = classToRun.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Something went wrong - check constructors for your class");
         }
 
-        if (!methodsWithBeforeSuite.isEmpty()) {
-            executeStaticMethod(methodsWithBeforeSuite.getFirst());
+        parseMethodAnnotations(methods);
+
+        if (beforeSuiteMethod != null) {
+            executeStaticMethod(beforeSuiteMethod);
         }
+
         if (!testMethods.isEmpty()) {
             executeTests(testMethods, testClassInstance);
         }
-        if (!methodsWithAfterSuite.isEmpty()) {
-            executeStaticMethod(methodsWithAfterSuite.getFirst());
+
+        if (afterSuiteMethod != null) {
+            executeStaticMethod(afterSuiteMethod);
         }
     }
 
-    private static void checkBeforeAfterAnnotations(List<Method> methodsWithBeforeSuite,
-                                                    List<Method> methodsWithAfterSuite) {
-        if (methodsWithBeforeSuite.size() > 1) {
-            throw new RuntimeException("More than one @BeforeSuite method found");
-        }
-        if (methodsWithAfterSuite.size() > 1) {
-            throw new RuntimeException("More than one @BAfterSuite method found");
-        }
-        methodsWithBeforeSuite.forEach(m -> {
-            if (!Modifier.isStatic(m.getModifiers())) {
-                throw new RuntimeException("@BeforeSuite could be used only for static methods");
+    private static void parseMethodAnnotations(Method[] methods) {
+        int beforeSuiteCount = 0;
+        int afterSuiteCount = 0;
+
+        for (Method method : methods) {
+            if (method.isAnnotationPresent(BeforeSuite.class)) {
+                if (beforeSuiteCount > 0) {
+                    throw new RuntimeException("More than one @BeforeSuite method found");
+                }
+                beforeSuiteMethod = method;
+                beforeSuiteCount++;
+                if (!java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
+                    throw new RuntimeException("@BeforeSuite could be used only for static methods");
+                }
             }
-        });
-        methodsWithAfterSuite.forEach(m -> {
-            if (!Modifier.isStatic(m.getModifiers())) {
-                throw new RuntimeException("@AfterSuite could be used only for static methods");
+            if (method.isAnnotationPresent(AfterSuite.class)) {
+                if (afterSuiteCount > 0) {
+                    throw new RuntimeException("More than one @AfterSuite method found");
+                }
+                afterSuiteMethod = method;
+                afterSuiteCount++;
+                if (!java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
+                    throw new RuntimeException("@AfterSuite could be used only for static methods");
+                }
             }
-        });
+            if (method.isAnnotationPresent(Test.class)) {
+                if (method.getAnnotation(Test.class).priority() > 10 || method.getAnnotation(Test.class).priority() < 1) {
+                    throw new RuntimeException("Method " + method.getName() + " has invalid priority. " +
+                            "Priority should be from 1 to 10.");
+                }
+                testMethods.add(method);
+            }
+        }
     }
 
     private static void executeStaticMethod(Method methodToRun) {
         try {
             methodToRun.invoke(null);
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Something went wrong during BeforeSuite/AfterSuite method execution with " +
                     "name " + methodToRun.getName());
 
@@ -89,7 +100,7 @@ public class Runner {
             }
             try {
                 method.invoke(testInstance);
-            } catch (IllegalAccessException | InvocationTargetException e) {
+            } catch (ReflectiveOperationException e) {
                 throw new RuntimeException("Something went wrong during Test method execution with name "
                         + method.getName());
             }
