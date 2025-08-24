@@ -1,13 +1,13 @@
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CustomThreadPool {
 
     private final Object locker = new Object();
-    private final HashSet<WorkerThread> workers = new HashSet<>();
     private final LinkedList<Runnable> tasks;
     private final AtomicBoolean isShutdown;
+    private final AtomicInteger activeTasks;
     private final AtomicBoolean isTerminated;
 
     public CustomThreadPool(int capacity) {
@@ -16,10 +16,11 @@ public class CustomThreadPool {
         }
         tasks = new LinkedList<>();
         isShutdown = new AtomicBoolean(false);
+        activeTasks = new AtomicInteger(0);
         isTerminated = new AtomicBoolean(false);
+
         for (int i = 0; i < capacity; i++) {
             WorkerThread worker = new WorkerThread("CustomPool, Thread #" + i);
-            workers.add(worker);
             worker.start();
         }
     }
@@ -31,10 +32,9 @@ public class CustomThreadPool {
         if (task == null) {
             throw new NullPointerException("Задача равна null");
         }
-
         synchronized (locker) {
             tasks.add(task);
-            locker.notify();
+            locker.notifyAll();
         }
     }
 
@@ -45,16 +45,17 @@ public class CustomThreadPool {
         }
     }
 
-    public boolean awaitTermination() {
+    public void awaitTermination() {
         try {
-            for (WorkerThread worker : workers) {
-                worker.join();
+            synchronized (locker) {
+                while (!tasks.isEmpty() || activeTasks.get() != 0) {
+                    locker.wait();
+                }
+                isTerminated.set(true);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        isTerminated.set(true);
-        return true;
     }
 
     private class WorkerThread extends Thread {
@@ -79,7 +80,12 @@ public class CustomThreadPool {
                         }
                     }
                     if (task != null) {
+                        activeTasks.incrementAndGet();
                         task.run();
+                        activeTasks.decrementAndGet();
+                        synchronized (locker) {
+                            locker.notifyAll();
+                        }
                     }
                 }
             } catch (InterruptedException e) {
