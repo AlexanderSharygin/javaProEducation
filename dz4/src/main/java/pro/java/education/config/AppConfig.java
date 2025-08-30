@@ -1,10 +1,9 @@
-package pro.java.education;
+package pro.java.education.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
@@ -18,7 +17,6 @@ import java.sql.Statement;
 import java.util.stream.Collectors;
 
 @Configuration
-@ComponentScan("pro.java.education")
 @PropertySource("classpath:database.properties")
 public class AppConfig {
     // Базовая конфигурация
