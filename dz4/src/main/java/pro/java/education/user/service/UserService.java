@@ -1,50 +1,61 @@
 package pro.java.education.user.service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pro.java.education.exception.model.ConflictException;
+import pro.java.education.exception.model.NotFoundException;
+import pro.java.education.user.dto.UserDto;
+import pro.java.education.user.dto.UserMapper;
 import pro.java.education.user.model.User;
 import pro.java.education.user.repository.UserRepository;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class UserService {
 
     private final UserRepository userRepository;
 
-    public User getUserById(long userId) {
+    public UserDto getUserById(long userId) {
         Optional<User> user = userRepository.findById(userId);
-        return user.orElseThrow(() -> new NoSuchElementException("Не найден user c id = " + userId));
-    }
-
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    public void createUser(String userName) {
-        userRepository.save(new User(userName));
-    }
-
-    public void updateUser(User user) {
-        Optional<User> existedUser = userRepository.findById(user.getId());
-        if (existedUser.isPresent()) {
-            userRepository.save(new User(user.getId(), user.getName()));
-        } else {
-            throw new NoSuchElementException("Не найден user c id = " + user.getId());
+        if (user.isEmpty()) {
+            throw new NotFoundException("Не найден user c id = " + userId);
         }
+        return UserMapper.toUserDtoFromUser(user.get());
     }
 
-    public void deleteUser(User user) {
-        Optional<User> existedUser = userRepository.findById(user.getId());
-        if (existedUser.isPresent()) {
-            userRepository.deleteById(user.getId());
-        } else {
-            throw new NoSuchElementException("Не найден user c id = " + user.getId());
+    public List<UserDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(UserMapper::toUserDtoFromUser).toList();
+    }
+
+    public void createUser(UserDto userDto) {
+        Optional<User> user = userRepository.findUserByName(userDto.getName());
+        if (user.isPresent()) {
+            throw new ConflictException("User с именем " + userDto.getName() + " уже существует!");
         }
+        userRepository.save(UserMapper.toUserFromUserDto(userDto));
+    }
+
+    public void updateUser(UserDto userDto) {
+        Optional<User> existedUser = userRepository.findById(userDto.getId());
+        if (existedUser.isEmpty()) {
+            throw new NotFoundException("Не найден user c id = " + userDto.getId());
+        }
+        Optional<User> user = userRepository.findUserByName(userDto.getName());
+        if (user.isPresent()) {
+            throw new ConflictException("User с именем " + userDto.getName() + " ");
+        }
+        userRepository.save(UserMapper.toUserFromUserDto(userDto));
+    }
+
+    public void deleteUserById(long userId) {
+        Optional<User> existedUser = userRepository.findById(userId);
+        if (existedUser.isEmpty()) {
+            throw new NotFoundException("Не найден user c id = " + userId);
+        }
+        userRepository.deleteById(userId);
     }
 }

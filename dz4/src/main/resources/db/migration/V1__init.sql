@@ -2,17 +2,6 @@ DROP TABLE IF EXISTS users;
 
 CREATE TABLE IF NOT EXISTS users
 (
-    id
-    BIGINT
-    GENERATED
-    BY
-    DEFAULT AS
-    IDENTITY
-    NOT
-    NULL,
-    username
-    VARCHAR
-(
-    50
-) NOT NULL UNIQUE
-    )
+    id BIGINT GENERATED  BY  DEFAULT AS IDENTITY NOT  NULL,
+    username VARCHAR(50) NOT NULL UNIQUE
+)
