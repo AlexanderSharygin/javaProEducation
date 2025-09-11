@@ -2,16 +2,18 @@ package pro.java.education.user.dto;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 import pro.java.education.user.model.User;
 
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Component
 public class UserMapper {
-    public static UserDto toUserDtoFromUser(User user) {
+    public UserDto toUserDtoFromUser(User user) {
         return new UserDto(user.getId(), user.getName());
     }
 
-    public static User toUserFromUserDto(UserDto userDto) {
-        return new User(userDto.getId(), userDto.getName());
+    public User toUserFromUserDto(UserDto userDto) {
+        return new User(userDto.id(), userDto.name());
     }
 }

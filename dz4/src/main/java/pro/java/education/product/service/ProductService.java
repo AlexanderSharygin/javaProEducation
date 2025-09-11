@@ -3,6 +3,7 @@ package pro.java.education.product.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pro.java.education.exception.model.ConflictException;
 import pro.java.education.exception.model.NotFoundException;
 import pro.java.education.product.dto.NewProductDto;
 import pro.java.education.product.dto.ProductDto;
@@ -15,7 +16,6 @@ import pro.java.education.user.model.User;
 import pro.java.education.user.repository.UserRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -25,34 +25,29 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ProductCategoryRepository categoryRepository;
+    private final ProductMapper productMapper;
 
     public void createProduct(NewProductDto newProductDto, Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isEmpty()) {
-            throw new NotFoundException("Не найден user c id = " + userId);
-        }
-        Optional<Product> existedProduct = productRepository.findByAccountNumber(newProductDto.getAccountNumber());
-        if (existedProduct.isPresent()) {
-            throw new NotFoundException("Product с указанным accountNumber уже существует!");
-        }
-        Optional<ProductCategory> category = categoryRepository.findByName(newProductDto.getCategory().toUpperCase());
-        if (category.isEmpty()) {
-            throw new NotFoundException("Указана неверная категория продукта");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Не найден user c id = " + userId));
+        productRepository.findByAccountNumber(newProductDto.accountNumber())
+                .ifPresent(__ -> {
+                    throw new ConflictException("Product с указанным accountNumber уже существует!");
+                });
+        ProductCategory category = categoryRepository.findByName(newProductDto.category().toUpperCase())
+                .orElseThrow(() -> new NotFoundException("Указана неверная категория продукта"));
 
-        productRepository.save(ProductMapper.toProductFromNewProductDto(newProductDto, user.get(), category.get()));
+        productRepository.save(productMapper.toProductFromNewProductDto(newProductDto, user, category));
     }
 
     public List<ProductDto> getAllProductsByUserId(Long userId) {
         List<Product> products = productRepository.findAllByUser_Id(userId);
-        return products.stream().map(ProductMapper::toProductDtoFromProduct).toList();
+        return products.stream().map(productMapper::toProductDtoFromProduct).toList();
     }
 
     public ProductDto getProductsByAccountNumber(Long accountNumber) {
-        Optional<Product> product = productRepository.findByAccountNumber(accountNumber);
-        if (product.isEmpty()) {
-            throw new NotFoundException("Product с указанным accountNumber не найден!");
-        }
-        return ProductMapper.toProductDtoFromProduct(product.get());
+        Product product = productRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new NotFoundException("Product с указанным accountNumber не найден!"));
+        return productMapper.toProductDtoFromProduct(product);
     }
 }

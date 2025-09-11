@@ -10,7 +10,7 @@ import pro.java.education.user.service.UserService;
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "/users")
+@RequestMapping(path = "V1/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
@@ -22,13 +22,11 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
     public UserDto getUserById(@PathVariable("id") Long id) {
         return userService.getUserById(id);
     }
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
     public List<UserDto> getUsers() {
         return userService.getAllUsers();
     }
@@ -40,7 +38,6 @@ public class UserController {
     }
 
     @PatchMapping
-    @ResponseStatus(HttpStatus.OK)
     public void updateUser(@RequestBody @Valid UserDto userDto) {
         userService.updateUser(userDto);
     }

@@ -11,7 +11,7 @@ import pro.java.education.product.service.ProductService;
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "/products")
+@RequestMapping(path = "V1/products")
 @RequiredArgsConstructor
 public class ProductController {
     private final ProductService productService;
@@ -24,13 +24,11 @@ public class ProductController {
     }
 
     @GetMapping("/account/{number}")
-    @ResponseStatus(HttpStatus.OK)
     public ProductDto getProductByAccountNumber(@PathVariable("number") Long number) {
         return productService.getProductsByAccountNumber(number);
     }
 
     @GetMapping("/user/{id}")
-    @ResponseStatus(HttpStatus.OK)
     public List<ProductDto> getUsers(@PathVariable("id") Long id) {
         return productService.getAllProductsByUserId(id);
     }

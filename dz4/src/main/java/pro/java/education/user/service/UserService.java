@@ -10,52 +10,45 @@ import pro.java.education.user.model.User;
 import pro.java.education.user.repository.UserRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     public UserDto getUserById(long userId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isEmpty()) {
-            throw new NotFoundException("Не найден user c id = " + userId);
-        }
-        return UserMapper.toUserDtoFromUser(user.get());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Не найден user c id = " + userId));
+        return userMapper.toUserDtoFromUser(user);
     }
 
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(UserMapper::toUserDtoFromUser).toList();
+                .map(userMapper::toUserDtoFromUser).toList();
     }
 
     public void createUser(UserDto userDto) {
-        Optional<User> user = userRepository.findUserByName(userDto.getName());
-        if (user.isPresent()) {
-            throw new ConflictException("User с именем " + userDto.getName() + " уже существует!");
-        }
-        userRepository.save(UserMapper.toUserFromUserDto(userDto));
+        userRepository.findUserByName(userDto.name())
+                .ifPresent(__ -> {
+                    throw new ConflictException("User с именем " + userDto.name() + " ");
+                });
+        userRepository.save(userMapper.toUserFromUserDto(userDto));
     }
 
     public void updateUser(UserDto userDto) {
-        Optional<User> existedUser = userRepository.findById(userDto.getId());
-        if (existedUser.isEmpty()) {
-            throw new NotFoundException("Не найден user c id = " + userDto.getId());
-        }
-        Optional<User> user = userRepository.findUserByName(userDto.getName());
-        if (user.isPresent()) {
-            throw new ConflictException("User с именем " + userDto.getName() + " ");
-        }
-        userRepository.save(UserMapper.toUserFromUserDto(userDto));
+        userRepository.findById(userDto.id())
+                .orElseThrow(() -> new NotFoundException("Не найден user c id = " + userDto.id()));
+        userRepository.findUserByName(userDto.name())
+                .ifPresent(__ -> {
+                    throw new ConflictException("User с именем " + userDto.name() + " ");
+                });
+        userRepository.save(userMapper.toUserFromUserDto(userDto));
     }
 
     public void deleteUserById(long userId) {
-        Optional<User> existedUser = userRepository.findById(userId);
-        if (existedUser.isEmpty()) {
-            throw new NotFoundException("Не найден user c id = " + userId);
-        }
+        userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Не найден user c id = " + userId));
         userRepository.deleteById(userId);
     }
 }
