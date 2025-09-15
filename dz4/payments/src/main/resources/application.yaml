@@ -1,0 +1,8 @@
+server:
+  port: 8081
+
+logging:
+  level:
+    org.flywaydb: WARN
+    org.springframework.jdbc.core: WARN
+    org.springframework.boot.autoconfigure.flyway: WARN
