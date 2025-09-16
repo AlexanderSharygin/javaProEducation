@@ -1,14 +1,15 @@
 package pro.java.education.payment.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import pro.java.education.payment.dto.PaymentRequestDto;
 import pro.java.education.payment.dto.ProductDto;
 import pro.java.education.payment.sevice.PaymentService;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping(path = "V1/payments")
@@ -21,5 +22,8 @@ public class PaymentController {
         return paymentService.getAllProductsByUserId(userId);
     }
 
-
+    @PostMapping
+    public ResponseEntity<UUID> executePayment(@RequestBody @Valid PaymentRequestDto paymentRequestDto) {
+        return ResponseEntity.ok(paymentService.executePayment(paymentRequestDto));
+    }
 }

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pro.java.education.exception.model.ConflictException;
 import pro.java.education.exception.model.ErrorResponse;
+import pro.java.education.exception.model.InvalidPaymentDataException;
 import pro.java.education.exception.model.NotFoundException;
 
 
@@ -19,8 +20,8 @@ public class ExceptionApiHandler {
     public ErrorResponse entityIsAlreadyExist(ConflictException exception) {
         log.warn("Entity is already. Message: {}, StackTrace: {}", exception.getMessage(), exception.getStackTrace());
 
-        return new ErrorResponse(exception.getMessage(), "Entity is already exist!",
-                HttpStatus.CONFLICT.toString());
+        return new ErrorResponse(exception.getMessage(), HttpStatus.CONFLICT.toString(),
+                "Entity is already exist!");
     }
 
     @ExceptionHandler(NotFoundException.class)
@@ -28,8 +29,17 @@ public class ExceptionApiHandler {
     public ErrorResponse entityIsNotExist(NotFoundException exception) {
         log.warn("Entity is not found. Message: {}, StackTrace: {}", exception.getMessage(), exception.getStackTrace());
 
-        return new ErrorResponse(exception.getMessage(), "Entity is not found!",
-                HttpStatus.NOT_FOUND.toString());
+        return new ErrorResponse(exception.getMessage(), HttpStatus.NOT_FOUND.toString(),
+                "Entity is not found!");
+    }
+
+    @ExceptionHandler(InvalidPaymentDataException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse entityIsNotExist(InvalidPaymentDataException exception) {
+        log.warn("Invalid payment data. Message: {}, StackTrace: {}", exception.getMessage(), exception.getStackTrace());
+
+        return new ErrorResponse(exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                "Invalid payment data");
     }
 
     @ExceptionHandler
