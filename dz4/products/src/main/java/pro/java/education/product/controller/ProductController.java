@@ -29,7 +29,7 @@ public class ProductController {
     }
 
     @GetMapping("/user/{id}")
-    public List<ProductDto> getUsers(@PathVariable("id") Long id) {
+    public List<ProductDto> getProductsByUserId(@PathVariable("id") Long id) {
         return productService.getAllProductsByUserId(id);
     }
 }

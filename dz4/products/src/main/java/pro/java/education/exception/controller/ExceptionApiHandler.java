@@ -31,4 +31,13 @@ public class ExceptionApiHandler {
         return new ErrorResponse(exception.getMessage(), "Entity is not found!",
                 HttpStatus.NOT_FOUND.toString());
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleOtherExceptions(final Throwable e) {
+        log.warn("Unknown error. Message: {}, StackTrace: {}", e.getMessage(), e.getStackTrace());
+
+        return new ErrorResponse(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                "Something went wrong");
+    }
 }

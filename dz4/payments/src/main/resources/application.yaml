@@ -1,2 +1,9 @@
 server:
   port: 8081
+
+integrations:
+  clients:
+    products-client:
+      url: http://localhost:8080
+      connect-timeout: 5s
+      read-timeout: 10s
